@@ -89,15 +89,21 @@ let count t side = List.length (side_list t side)
 let best_price t side =
   match side_list t side with
   | [] -> None
-  | first :: rest ->
-    let is_better =
-      match (side : Side.t) with Buy -> Price.( > ) | Sell -> Price.( < )
-    in
+  | prices_list ->
     Some
-      (List.fold rest ~init:(Order.price first) ~f:(fun best order ->
-         let price = Order.price order in
-         if is_better price best then price else best))
+      (List.reduce prices_list ~f:(fun curr other ->
+         if Price.is_more_aggressive
+              side
+              ~price:(Order.price curr)
+              ~than:(Order.price other)
+         then curr
+         else other))
 ;;
+
+(* | first :: rest -> let is_better = match (side : Side.t) with Buy ->
+   Price.( > ) | Sell -> Price.( < ) in Some (List.fold rest
+   ~init:(Order.price first) ~f:(fun best order -> let price = Order.price
+   order in if is_better price best then price else best)) (List.reduce rest) *)
 
 let best_level t side : Level.t option =
   match best_price t side with

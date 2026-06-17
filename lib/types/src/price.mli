@@ -12,6 +12,7 @@ open! Core
 
 type t [@@deriving sexp, bin_io, compare, equal, hash, string]
 
+(* functor: function module -> module *)
 include Comparable.S with type t := t
 
 (** {2 Construction} *)
