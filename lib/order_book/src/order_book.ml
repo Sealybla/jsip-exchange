@@ -71,15 +71,26 @@ let find_match t incoming =
   let incoming_side = Order.side incoming in
   let opposite_side = Side.flip incoming_side in
   let resting_orders = side_list t opposite_side in
-  let is_marketable ~price ~resting_price =
+  (*finds newest best order bc starting from beginnign*)
+  List.fold resting_orders ~init:None ~f:(fun acc order ->
+    match acc with
+    | None -> (*no marketable orders yet -> check if current order is marketable*)
+      if (Price.is_marketable incoming_side (~price: (Order.price incoming)) (~resting_price: (Order.price order))) 
+      then (Some order) else None
+    | Some best -> (*check if current order is more aggressive than prev most aggressive order*)
+      if (Price.is_more_aggressive opposite_side (~price: Order.price order) (~than: Order.price best)
+        and Price.is_more_aggres)
+      then (Some order) else (Some best)
+    
+  (* let is_marketable ~price ~resting_price =
     match (incoming_side : Side.t) with
     | Buy -> Price.( >= ) price resting_price
     | Sell -> Price.( <= ) price resting_price
-  in
-  List.find resting_orders ~f:(fun resting ->
+  in *)
+  (* List.find resting_orders ~f:(fun resting ->
     is_marketable
       ~price:(Order.price incoming)
-      ~resting_price:(Order.price resting))
+      ~resting_price:(Order.price resting)) *)
 ;;
 
 let orders_on_side t side = side_list t side
