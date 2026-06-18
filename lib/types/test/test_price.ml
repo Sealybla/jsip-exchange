@@ -75,38 +75,60 @@ let%expect_test "negative to_string_dollar" =
   [%expect {| -$1.50 |}]
 ;;
 
-
-(* Exercise 1 tests*)
+(* Exercise 1 tests *)
 
 let%expect_test "is_more_aggressive: buy side" =
   let a = Price.of_int_cents 1600 in
   let b = Price.of_int_cents 1500 in
-  [%test_result: bool] (Price.is_more_aggressive ~side: Side.Buy ~price:(a) ~other:(b)) ~expect:true;
-  [%test_result: bool] (Price.is_more_aggressive ~side: Side.Buy ~price:(b) ~other:(a)) ~expect:false;
-  [%test_result: bool] (Price.is_more_aggressive ~side: Side.Buy ~price:(a) ~other:(a)) ~expect:false
+  [%test_result: bool]
+    (Price.is_more_aggressive Side.Buy ~price:a ~than:b)
+    ~expect:true;
+  [%test_result: bool]
+    (Price.is_more_aggressive Side.Buy ~price:b ~than:a)
+    ~expect:false;
+  [%test_result: bool]
+    (Price.is_more_aggressive Side.Buy ~price:a ~than:a)
+    ~expect:false
 ;;
 
 let%expect_test "is_more_aggressive: sell side" =
   let a = Price.of_int_cents 1500 in
   let b = Price.of_int_cents 1600 in
-  [%test_result: bool] (Price.is_more_aggressive ~side: Side.Sell ~price:(a) ~other:(b)) ~expect:true;
-  [%test_result: bool] (Price.is_more_aggressive ~side: Side.Sell ~price:(b) ~other:(a)) ~expect:false;
-  [%test_result: bool] (Price.is_more_aggressive ~side: Side.Sell ~price:(a) ~other:(a)) ~expect:false
+  [%test_result: bool]
+    (Price.is_more_aggressive Side.Sell ~price:a ~than:b)
+    ~expect:true;
+  [%test_result: bool]
+    (Price.is_more_aggressive Side.Sell ~price:b ~than:a)
+    ~expect:false;
+  [%test_result: bool]
+    (Price.is_more_aggressive Side.Sell ~price:a ~than:a)
+    ~expect:false
 ;;
 
 let%expect_test "is_marketable: buy side" =
   let a = Price.of_int_cents 1600 in
   let b = Price.of_int_cents 1500 in
-  [%test_result: bool] (Price.is_marketable ~side: Side.Buy ~price:(a) ~other:(b)) ~expect:true;
-  [%test_result: bool] (Price.is_marketable ~side: Side.Buy ~price:(b) ~other:(a)) ~expect:false;
-  [%test_result: bool] (Price.is_marketable ~side: Side.Buy ~price:(a) ~other:(a)) ~expect:true;
+  [%test_result: bool]
+    (Price.is_marketable Side.Buy ~price:a ~resting_price:b)
+    ~expect:true;
+  [%test_result: bool]
+    (Price.is_marketable Side.Buy ~price:b ~resting_price:a)
+    ~expect:false;
+  [%test_result: bool]
+    (Price.is_marketable Side.Buy ~price:a ~resting_price:a)
+    ~expect:true
 ;;
 
 let%expect_test "is_marketable: sell side" =
   let a = Price.of_int_cents 1500 in
   let b = Price.of_int_cents 1600 in
-  [%test_result: bool] (Price.is_marketable ~side: Side.Sell ~price:(a) ~other:(b)) ~expect:true;
-  [%test_result: bool] (Price.is_marketable ~side: Side.Sell ~price:(b) ~other:(a)) ~expect:false;
-  [%test_result: bool] (Price.is_marketable ~side: Side.Sell ~price:(a) ~other:(a)) ~expect:true;
+  [%test_result: bool]
+    (Price.is_marketable Side.Sell ~price:a ~resting_price:b)
+    ~expect:true;
+  [%test_result: bool]
+    (Price.is_marketable Side.Sell ~price:b ~resting_price:a)
+    ~expect:false;
+  [%test_result: bool]
+    (Price.is_marketable Side.Sell ~price:a ~resting_price:a)
+    ~expect:true
 ;;
-
