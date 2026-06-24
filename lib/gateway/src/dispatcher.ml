@@ -6,11 +6,13 @@ type t =
   { market_data_subscribers_by_symbol :
       Exchange_event.t Pipe.Writer.t Bag.t Symbol.Table.t
   ; audit_subscribers : Exchange_event.t Pipe.Writer.t Bag.t
+  ; participant_sessions : Session.t Participant.Table.t
   }
 
 let create () =
   { market_data_subscribers_by_symbol = Symbol.Table.create ()
   ; audit_subscribers = Bag.create ()
+  ; participant_sessions = Participant.Table.create ()
   }
 ;;
 
@@ -18,7 +20,6 @@ let subscribe_market_data t symbols =
   let reader, writer = Pipe.create () in
   (* Register the same writer in every requested symbol's bag. A per-symbol
      publish iterates a single bag, so a subscriber listed in multiple bags
-     receives each event exactly once — only via whichever bag matches the
      event's symbol. *)
   let elts =
     List.map symbols ~f:(fun symbol ->
@@ -65,10 +66,12 @@ let push_to_session t participant event =
   (* TODO: Once sessions have been implemented this function should write the
      event to the appropriate session's pipe. For now we have the server
      binary print these events to stdout while tests can silence them. *)
-  ignore t;
-  print_endline
-    [%string
-      "[for %{participant#Participant}] %{Protocol.format_event event}"]
+
+  (* Checks participant exists in participant sessions first *)
+  let participant_sess = Hashtbl.find t.participant_sessions participant in
+  match participant_sess with
+  | Some sess -> Session.push sess event
+  | None -> ()
 ;;
 
 let dispatch_event t (event : Exchange_event.t) =
@@ -109,3 +112,39 @@ let dispatch t events = List.iter events ~f:(dispatch_event t)
 module For_testing = struct
   let audit_subscriber_count t = Bag.length t.audit_subscribers
 end
+
+let clean_up_session t (session : Session.t) : unit Deferred.t =
+  (* check if session exists using participant bc bijection btw participants
+     and sessions *)
+  let exist_session_or_none =
+    Hashtbl.find_and_remove
+      t.participant_sessions
+      (Session.participant session)
+  in
+  match exist_session_or_none with
+  | Some sess -> Deferred.return (Session.close sess)
+  | None -> Deferred.return ()
+;;
+
+let set_up_session t (participant : Participant.t) : unit Deferred.t =
+  (* ask: can you return something after the if-else statement *)
+  (* replace so participant is automatically removed then added (or just
+     added if DNE in table) *)
+  let exist_session_or_none =
+    Hashtbl.find_and_remove t.participant_sessions participant
+  in
+  match exist_session_or_none with
+  | Some sess ->
+    Session.close sess;
+    Deferred.return
+      (Hashtbl.add_exn
+         t.participant_sessions
+         ~key:participant
+         ~data:(Session.create participant))
+  | None ->
+    Deferred.return
+      (Hashtbl.add_exn
+         t.participant_sessions
+         ~key:participant
+         ~data:(Session.create participant))
+;;
