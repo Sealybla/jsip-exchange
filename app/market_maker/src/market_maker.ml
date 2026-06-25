@@ -16,6 +16,12 @@ module Config = struct
 end
 
 let seed_book (config : Config.t) conn =
+  let%bind _login_participant =
+    Rpc.Rpc.dispatch_exn
+      Rpc_protocol.login_rpc
+      conn
+      (Participant.to_string config.participant)
+  in
   let submit request =
     let%map result =
       Rpc.Rpc.dispatch_exn Rpc_protocol.submit_order_rpc conn request

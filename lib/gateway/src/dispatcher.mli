@@ -62,3 +62,4 @@ val clean_up_session : t -> Session.t -> unit Deferred.t
 
 (* calls clean up session if a session alr exists before creating new one *)
 val set_up_session : t -> Participant.t -> unit Deferred.t
+val set_up_session_err : t -> Participant.t -> unit Or_error.t

@@ -18,6 +18,12 @@ let start_bot ~where_to_connect ~oracle (Bot_spec.T spec) =
     >>| Result.map_error ~f:Error.of_exn
     >>| ok_exn
   in
+  let%bind _participant =
+    Rpc.Rpc.dispatch_exn
+      Rpc_protocol.login_rpc
+      connection
+      (Participant.to_string spec.participant)
+  in
   let submit request =
     Rpc.Rpc.dispatch_exn Rpc_protocol.submit_order_rpc connection request
   in

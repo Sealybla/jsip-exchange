@@ -113,7 +113,7 @@ module For_testing = struct
   let audit_subscriber_count t = Bag.length t.audit_subscribers
 end
 
-let clean_up_session t (session : Session.t) : unit Deferred.t =
+let clean_up_session_helper t (session : Session.t) : unit =
   (* check if session exists using participant bc bijection btw participants
      and sessions *)
   let exist_session_or_none =
@@ -122,29 +122,42 @@ let clean_up_session t (session : Session.t) : unit Deferred.t =
       (Session.participant session)
   in
   match exist_session_or_none with
-  | Some sess -> Deferred.return (Session.close sess)
-  | None -> Deferred.return ()
+  | Some sess -> Session.close sess
+  | None -> ()
 ;;
 
-let set_up_session t (participant : Participant.t) : unit Deferred.t =
-  (* ask: can you return something after the if-else statement *)
+let clean_up_session t (session : Session.t) : unit Deferred.t =
+  Deferred.return (clean_up_session_helper t session)
+;;
+
+let set_up_session_helper t (participant : Participant.t) : unit =
   (* replace so participant is automatically removed then added (or just
      added if DNE in table) *)
-  let exist_session_or_none =
-    Hashtbl.find_and_remove t.participant_sessions participant
-  in
-  match exist_session_or_none with
-  | Some sess ->
-    Session.close sess;
-    Deferred.return
-      (Hashtbl.add_exn
-         t.participant_sessions
-         ~key:participant
-         ~data:(Session.create participant))
+  let sess_if_exists = Hashtbl.find t.participant_sessions participant in
+  (match sess_if_exists with
+   | Some sess -> clean_up_session_helper t sess
+   | None -> ());
+  Hashtbl.add_exn
+    t.participant_sessions
+    ~key:participant
+    ~data:(Session.create participant)
+;;
+
+let set_up_session_err t (participant : Participant.t) : unit Or_error.t =
+  let sess_if_exists = Hashtbl.find t.participant_sessions participant in
+  match sess_if_exists with
+  | Some _ ->
+    Or_error.error_string
+      [%string "conflict: participant already has session"]
   | None ->
-    Deferred.return
+    Ok
       (Hashtbl.add_exn
          t.participant_sessions
          ~key:participant
          ~data:(Session.create participant))
+;;
+
+(* write clean up session helper without deferred, clean up session *)
+let set_up_session t (participant : Participant.t) : unit Deferred.t =
+  Deferred.return (set_up_session_helper t participant)
 ;;
