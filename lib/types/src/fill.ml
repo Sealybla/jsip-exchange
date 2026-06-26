@@ -40,3 +40,23 @@ let to_string
 ;;
 
 let notional_cents t = Price.to_int_cents t.price * Size.to_int t.size
+
+let get_str_given_side t side : string =
+  let side_str = if Side.equal side Side.Buy then "bought" else "sold" in
+  [%string
+    "You %{side_str} %{Size.to_string t.size} %{Symbol.to_string t.symbol} \
+     at $ %{Price.to_string t.price}."]
+;;
+
+let to_participant_view t participant : string option =
+  match Participant.equal participant t.aggressor_participant with
+  | true ->
+    let side = t.aggressor_side in
+    Some (get_str_given_side t side)
+  | false ->
+    (match Participant.equal participant t.resting_participant with
+     | true ->
+       let side = Side.flip t.aggressor_side in
+       Some (get_str_given_side t side)
+     | false -> None)
+;;

@@ -28,6 +28,33 @@ Commands: BUY|SELL <symbol> <size> <price> [IOC|DAY]
 Order acknowledgements, fills, and cancellations are temporarily printed
 by the server process; the SUBSCRIBE command attaches you to a per-symbol
 market-data feed.|}];
+  let%bind _participant_login =
+    Rpc.Rpc.dispatch_exn
+      Rpc_protocol.login_rpc
+      conn
+      (Participant.to_string participant)
+  in
+  let%bind sess =
+    Rpc.Pipe_rpc.dispatch Rpc_protocol.session_feed_rpc conn ()
+  in
+  (match sess with
+   | Error err | Ok (Error err) ->
+     print_endline [%string "ERROR with session: %{Error.to_string_hum err}"]
+   | Ok (Ok (reader, _id)) ->
+     print_endline [%string {|Session works YIPPEE|}];
+     don't_wait_for
+       (Pipe.iter_without_pushback
+          reader
+          ~f:(fun (event : Exchange_event.t) ->
+            match event with
+            | Fill f ->
+              let (potential_fill_str : string option) =
+                Fill.to_participant_view f participant
+              in
+              (match potential_fill_str with
+               | Some s -> print_endline s
+               | None -> ())
+            | _ -> ())));
   let rec loop () =
     print_string "> ";
     match%bind Reader.read_line (Lazy.force Reader.stdin) with
