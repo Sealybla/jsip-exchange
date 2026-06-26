@@ -78,10 +78,15 @@ let handle_login
          [%string "session for participant already exists"])
 ;;
 
-(* let handle_session_feed (con_state : Connection_state.t):
-   (Exchange_event.t Pipe_Reader.t) = let sess = con_state.session in match
-   sess with |None -> Error [%string "not logged in"] |Some s ->
-   Session.reader s ;; *)
+let handle_session_feed (con_state : Connection_state.t):
+   (Exchange_event.t Pipe_Reader.t) Or_error.t = 
+   let sess = con_state.session in 
+   match sess with 
+   |None -> Error [%string "not logged in"] 
+   |Some s -> 
+    Session.reader s 
+;;
+
 
 let start ~symbols ~port () =
   let engine = Matching_engine.create symbols in
@@ -117,11 +122,11 @@ let start ~symbols ~port () =
             ignore state;
             let reader = Dispatcher.subscribe_audit dispatcher in
             return (Ok reader))
-          (*= ; Rpc.Pipe_rpc.implement
+        ; Rpc.Pipe_rpc.implement
             Rpc_protocol.session_feed_rpc
-            (fun state participant_str ->
-               let reader = handle_login ~dispatcher participant_str state in
-               return reader) *)
+            (fun state () ->
+              let reader = handle_session_feed state in
+               return reader)
         ]
       ~on_unknown_rpc:`Close_connection
       ~on_exception:Log_on_background_exn
@@ -129,12 +134,12 @@ let start ~symbols ~port () =
   let%map tcp_server =
     Rpc.Connection.serve
       ~implementations
-      ~initial_connection_state:(fun _addr _conn :
-      (Connection_state.t -> { session = None })
-        (* don't_wait_for(let%bind _closing_session = Rpc.Connection.close_finished in 
+      ~initial_connection_state:(fun _addr _conn ->
+      let conn_state = (Connection_state.t -> { session = None }) in
+        don't_wait_for (let%bind _closing_session = Rpc.Connection.close_finished in 
         match conn_state.session with
-        |Some sess -> 
-        |None -> ())  *)
+        |Some sess -> Dispatcher.clean_up_session dispatcher (sess)
+        |None -> return()) 
         conn_state)
       ~where_to_listen:(Tcp.Where_to_listen.of_port port)
       ()
