@@ -42,6 +42,7 @@ let seed_book (config : Config.t) conn =
       let%bind () =
         submit
           ({ symbol = config.symbol
+           ; client_order_id = 0
            ; participant = config.participant
            ; side = Buy
            ; price = Price.of_int_cents (config.fair_value_cents - offset)
@@ -52,6 +53,7 @@ let seed_book (config : Config.t) conn =
       and () =
         submit
           ({ symbol = config.symbol
+           ; client_order_id = 0
            ; participant = config.participant
            ; side = Sell
            ; price = Price.of_int_cents (config.fair_value_cents + offset)

@@ -8,6 +8,7 @@ type t =
   | Fill of Fill.t
   | Order_cancel of
       { order_id : Order_id.t
+      ; client_order_id : Order.Client_order_id.t
       ; participant : Participant.t
       ; symbol : Symbol.t
       ; remaining_size : Size.t

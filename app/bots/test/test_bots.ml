@@ -94,6 +94,7 @@ let%expect_test "make_recording_bot wires up a runnable bot" =
          { order_id = Order_id.For_testing.of_int 1
          ; request =
              { symbol = aapl
+             ; client_order_id = 1
              ; participant = alice
              ; side = Buy
              ; price = Price.of_int_cents 15000

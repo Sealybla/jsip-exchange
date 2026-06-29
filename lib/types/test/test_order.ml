@@ -5,6 +5,7 @@ open Expect_test_helpers_core
 let make_request
   ?(symbol = "AAPL")
   ?(participant = "Alice")
+  ?(client_order_id = 1)
   ?(side = Side.Buy)
   ?(price_cents = 15000)
   ?(size = 100)
@@ -13,6 +14,7 @@ let make_request
   : Order.Request.t
   =
   { symbol = Symbol.of_string symbol
+  ; client_order_id
   ; participant = Participant.of_string participant
   ; side
   ; price = Price.of_int_cents price_cents

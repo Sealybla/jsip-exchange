@@ -55,6 +55,7 @@ let book_with_n_asks ?(min_price = 10_000) n =
     let order =
       Order.create
         { symbol = aapl
+        ; client_order_id = 2
         ; participant = bob
         ; side = Sell
         ; price = Price.of_int_cents (min_price + i)
@@ -76,6 +77,7 @@ let engine_with_n_asks ?(min_price = 10_000) n =
       (Matching_engine.submit
          engine
          { symbol = aapl
+         ; client_order_id = 2
          ; participant = bob
          ; side = Sell
          ; price = Price.of_int_cents (min_price + i)
@@ -98,6 +100,7 @@ let bench_find_match ~n =
   let incoming =
     Order.create
       { symbol = aapl
+      ; client_order_id = 1
       ; participant = alice
       ; side = Buy
       ; price = Price.of_int_cents (min_price + n)
@@ -117,6 +120,7 @@ let bench_find_match_no_cross ~n =
   let incoming =
     Order.create
       { symbol = aapl
+      ; client_order_id = 1
       ; participant = alice
       ; side = Buy
       ; price = Price.of_int_cents (min_price - 1)
@@ -142,6 +146,7 @@ let bench_add_remove ~n =
   let order =
     Order.create
       { symbol = aapl
+      ; client_order_id = 1
       ; participant = alice
       ; side = Sell
       ; price = Price.of_int_cents (min_price + 500)
@@ -175,6 +180,7 @@ let bench_submit_ioc_cross ~n =
          Matching_engine.submit
            engine
            { symbol = aapl
+           ; client_order_id = 1
            ; participant = alice
            ; side = Buy
            ; price = Price.of_int_cents max_price
@@ -188,6 +194,7 @@ let bench_submit_ioc_cross ~n =
          (Matching_engine.submit
             engine
             { symbol = aapl
+            ; client_order_id = 2
             ; participant = bob
             ; side = Sell
             ; price = Price.of_int_cents !next_price
@@ -207,6 +214,7 @@ let bench_submit_ioc_no_match ~n =
       (Matching_engine.submit
          engine
          { symbol = aapl
+         ; client_order_id = 1
          ; participant = alice
          ; side = Buy
          ; price = Price.of_int_cents (min_price - 1)
@@ -226,6 +234,7 @@ let bench_submit_sweep ~n =
       (Matching_engine.submit
          !engine
          { symbol = aapl
+         ; client_order_id = 1
          ; participant = alice
          ; side = Buy
          ; price = Price.of_int_cents 99_999
@@ -247,6 +256,7 @@ let bench_find_match_alloc ~n =
   let incoming =
     Order.create
       { symbol = aapl
+      ; client_order_id = 1
       ; participant = alice
       ; side = Buy
       ; price = Price.of_int_cents (min_price + n)

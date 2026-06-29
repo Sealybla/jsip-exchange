@@ -19,8 +19,9 @@ val with_server
 type client
 
 (** Connect a client to [port]. The [participant] argument is accepted for
-    forward-compatibility with the planned login RPC but is currently ignored
-    — the server does not yet associate connections with participants. *)
+    forward-compatibility with the planned login RPC. Dispatches login_rpc
+    and session_feed_rpc and background task that prints every event it
+    receives with a participant tag *)
 val connect_as : port:int -> Participant.t -> client Deferred.t
 
 (** The raw RPC connection, useful for tests that exercise unusual RPC paths

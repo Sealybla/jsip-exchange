@@ -59,18 +59,16 @@ let handle_login
   let is_whitespace =
     String.for_all participant_name ~f:Char.is_whitespace
   in
+  (* test if participant name is empty *)
   match is_whitespace with
   | true -> Or_error.error_string [%string "participant name is empty"]
   | false ->
     let participant = Participant.of_string participant_name in
-    let set_up_success =
-      Dispatcher.set_up_session_err dispatcher participant
-    in
-    (match set_up_success with
+    let err_or_sess = Dispatcher.set_up_session_err dispatcher participant in
+    (match err_or_sess with
      (* store session in connection state so subsequence RPCs on same
         connection can find, return Ok(participant) *)
-     | Ok _ ->
-       let new_sess = Session.create participant in
+     | Ok new_sess ->
        con_state.session <- Some new_sess;
        Ok participant
      | Error _ ->

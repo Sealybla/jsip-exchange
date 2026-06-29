@@ -55,6 +55,7 @@ val buy
   :  price_cents:int
   -> ?size:int
   -> ?symbol:Symbol.t
+  -> ?client_order_id:Order.Client_order_id.t
   -> ?participant:Participant.t
   -> ?time_in_force:Time_in_force.t
   -> unit
@@ -64,6 +65,7 @@ val sell
   :  price_cents:int
   -> ?size:int
   -> ?symbol:Symbol.t
+  -> ?client_order_id:Order.Client_order_id.t
   -> ?participant:Participant.t
   -> ?time_in_force:Time_in_force.t
   -> unit

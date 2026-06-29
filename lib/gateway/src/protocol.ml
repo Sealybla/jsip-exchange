@@ -16,7 +16,8 @@ let parse_command line =
     in
     match parts with
     | [] -> Error "empty command"
-    | side_str :: rest ->
+    | _ :: [] -> Error "no client order id or anything else"
+    | side_str :: client_order_id_str :: rest ->
       let open Result.Let_syntax in
       let%bind side =
         match String.uppercase side_str with
@@ -24,6 +25,11 @@ let parse_command line =
         | "SELL" -> Ok Side.Sell
         | other ->
           Error [%string "unknown command: %{other} (expected BUY or SELL)"]
+      in
+      let%bind client_order_id =
+        match Int.of_string_opt client_order_id_str with
+        | Some int_of_cloid -> Ok int_of_cloid
+        | None -> Error [%string "client order id is not an int"]
       in
       (match rest with
        | symbol_str :: size_str :: price_str :: rest ->
@@ -73,6 +79,7 @@ let parse_command line =
          Ok
            ({ symbol
             ; participant
+            ; client_order_id
             ; side
             ; price
             ; size = Size.of_int size
@@ -81,7 +88,8 @@ let parse_command line =
             : Order.Request.t)
        | _ ->
          Error
-           "expected: BUY|SELL <symbol> <size> <price> [DAY|IOC] [as <name>]"))
+           "expected: BUY|SELL> <client_order_id> <symbol> <size> <price> \
+            [DAY|IOC] [as <name>]"))
 ;;
 
 let parse_command_with_default_participant line ~default =
@@ -96,8 +104,9 @@ let parse_command_with_default_participant line ~default =
 let format_event = function
   | Exchange_event.Order_accept { order_id; request } ->
     sprintf
-      "ACCEPTED id=%s %s %s %d@%s %s"
+      "ACCEPTED id=%s %s %s %s %d@%s %s"
       (Order_id.to_string order_id)
+      (Int.to_string request.client_order_id)
       (Symbol.to_string request.symbol)
       (Side.to_string request.side)
       (Size.to_int request.size)
@@ -105,11 +114,18 @@ let format_event = function
       (Time_in_force.to_string request.time_in_force)
   | Fill fill -> [%string "FILL %{fill#Fill}"]
   | Order_cancel
-      { order_id; participant = _; symbol; remaining_size; reason } ->
+      { order_id
+      ; client_order_id
+      ; participant = _
+      ; symbol
+      ; remaining_size
+      ; reason
+      } ->
     sprintf
-      "CANCELLED id=%s %s remaining=%d reason=%s"
+      "CANCELLED id=%s %s %s remaining=%d reason=%s"
       (Order_id.to_string order_id)
       (Symbol.to_string symbol)
+      (Int.to_string client_order_id)
       (Size.to_int remaining_size)
       (Cancel_reason.to_string reason)
   | Order_reject { request; reason } ->

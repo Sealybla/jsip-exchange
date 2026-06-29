@@ -9,11 +9,13 @@ let make_order
   ~order_id
   ?(size = 100)
   ?(participant = Harness.alice)
+  ?(client_order_id = 11)
   ()
   =
   Order.create
     ({ symbol = Harness.aapl
      ; participant
+     ; client_order_id
      ; side
      ; price = Price.of_int_cents price_cents
      ; size = Size.of_int size

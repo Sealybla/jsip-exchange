@@ -43,9 +43,11 @@ let rec match_loop ~book ~order ~fill_id =
           ; size = fill_size
           ; aggressor_order_id = Order.order_id order
           ; aggressor_participant = Order.participant order
+          ; aggressor_client_order_id = Order.client_order_id order
           ; aggressor_side = Order.side order
           ; resting_order_id = Order.order_id resting
           ; resting_participant = Order.participant resting
+          ; resting_client_order_id = Order.client_order_id order
           }
       in
       let trade_event =
@@ -68,6 +70,7 @@ let submit t (request : Order.Request.t) =
   | Some book ->
     let order_id = Order_id.Generator.next t.order_id_gen in
     let order = Order.create request ~order_id in
+    let client_order_id = Order.Request.client_order_id request in
     let accepted = Exchange_event.Order_accept { order_id; request } in
     (* Snapshot BBO before matching so we can detect changes. *)
     let bbo_before = Order_book.best_bid_offer book in
@@ -87,6 +90,7 @@ let submit t (request : Order.Request.t) =
         | Ioc ->
           [ Exchange_event.Order_cancel
               { order_id
+              ; client_order_id
               ; participant = Order.participant order
               ; symbol = Order.symbol order
               ; remaining_size = Order.remaining_size order

@@ -7,12 +7,17 @@
 
 open! Core
 
+module Client_order_id : sig
+  type t = int [@@deriving sexp, bin_io, compare, equal, hash]
+end
+
 (** An order as submitted by a participant (before the exchange assigns an
     order ID). This is what the gateway receives. *)
 module Request : sig
   type t =
     { symbol : Symbol.t
     ; participant : Participant.t
+    ; client_order_id : Client_order_id.t
     ; side : Side.t
     ; price : Price.t
     ; size : Size.t (** Number of shares/units. Must be positive. *)
@@ -21,6 +26,7 @@ module Request : sig
   [@@deriving sexp, bin_io]
 
   val to_string : t -> string
+  val client_order_id : t -> Client_order_id.t
 end
 
 (** A live order on the exchange, with an ID assigned by the matching engine
@@ -41,6 +47,7 @@ val create : Request.t -> order_id:Order_id.t -> t
 val order_id : t -> Order_id.t
 val symbol : t -> Symbol.t
 val participant : t -> Participant.t
+val client_order_id : t -> Client_order_id.t
 val side : t -> Side.t
 val price : t -> Price.t
 val size : t -> Size.t

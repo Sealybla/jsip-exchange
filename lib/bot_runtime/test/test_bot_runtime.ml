@@ -75,9 +75,11 @@ let fill_event : Exchange_event.t =
     ; size = Size.of_int 50
     ; aggressor_order_id = Order_id.For_testing.of_int 1
     ; aggressor_participant = alice
+    ; aggressor_client_order_id = 11
     ; aggressor_side = Buy
     ; resting_order_id = Order_id.For_testing.of_int 2
     ; resting_participant = bob
+    ; resting_client_order_id = 22
     }
 ;;
 
@@ -86,6 +88,7 @@ let accepted_event : Exchange_event.t =
     { order_id = Order_id.For_testing.of_int 1
     ; request =
         { symbol = aapl
+        ; client_order_id = 1
         ; participant = alice
         ; side = Buy
         ; price = Price.of_int_cents 15000

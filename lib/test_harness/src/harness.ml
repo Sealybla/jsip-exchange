@@ -30,6 +30,7 @@ let make_request
   ~price_cents
   ?(size = 100)
   ?(symbol = aapl)
+  ?(client_order_id = 11)
   ?(participant = alice)
   ?(time_in_force = Time_in_force.Day)
   ()
@@ -37,6 +38,7 @@ let make_request
   =
   { symbol
   ; participant
+  ; client_order_id
   ; side
   ; price = Price.of_int_cents price_cents
   ; size = Size.of_int size
@@ -44,10 +46,19 @@ let make_request
   }
 ;;
 
-let buy ~price_cents ?size ?symbol ?participant ?time_in_force () =
+let buy
+  ~price_cents
+  ?size
+  ?symbol
+  ?client_order_id
+  ?participant
+  ?time_in_force
+  ()
+  =
   make_request
     ~side:Buy
     ~price_cents
+    ?client_order_id
     ?size
     ?symbol
     ?participant
@@ -55,10 +66,19 @@ let buy ~price_cents ?size ?symbol ?participant ?time_in_force () =
     ()
 ;;
 
-let sell ~price_cents ?size ?symbol ?participant ?time_in_force () =
+let sell
+  ~price_cents
+  ?size
+  ?symbol
+  ?client_order_id
+  ?participant
+  ?time_in_force
+  ()
+  =
   make_request
     ~side:Sell
     ~price_cents
+    ?client_order_id
     ?size
     ?symbol
     ?participant
@@ -96,6 +116,7 @@ let sample_events : Exchange_event.t list =
   let order_request : Order.Request.t =
     { symbol = aapl
     ; participant = alice
+    ; client_order_id = 11
     ; side = Buy
     ; price = Price.of_int_cents 15000
     ; size = Size.of_int 100
@@ -111,13 +132,16 @@ let sample_events : Exchange_event.t list =
       ; size = Size.of_int 100
       ; aggressor_order_id = Order_id.For_testing.of_int 2
       ; aggressor_participant = alice
+      ; aggressor_client_order_id = 11
       ; aggressor_side = Buy
       ; resting_order_id = Order_id.For_testing.of_int 1
       ; resting_participant = bob
+      ; resting_client_order_id = 22
       }
   ; Order_cancel
       { order_id = Order_id.For_testing.of_int 1
       ; participant = alice
+      ; client_order_id = 11
       ; symbol = aapl
       ; remaining_size = Size.of_int 50
       ; reason = Ioc_remainder

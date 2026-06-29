@@ -154,6 +154,7 @@ let%expect_test "format_event: all event types" =
         { order_id = Order_id.of_string "1"
         ; request =
             { symbol = Symbol.of_string "AAPL"
+            ; client_order_id = 11
             ; participant = Participant.of_string "Alice"
             ; side = Buy
             ; price = Price.of_int_cents 15000
@@ -168,12 +169,15 @@ let%expect_test "format_event: all event types" =
         ; size = Size.of_int 100
         ; aggressor_order_id = Order_id.of_string "2"
         ; aggressor_participant = Participant.of_string "Alice"
+        ; aggressor_client_order_id = 11
         ; aggressor_side = Buy
         ; resting_order_id = Order_id.of_string "1"
         ; resting_participant = Participant.of_string "Bob"
+        ; resting_client_order_id = 22
         }
     ; Order_cancel
         { order_id = Order_id.of_string "3"
+        ; client_order_id = 33
         ; participant = Participant.of_string "Charlie"
         ; symbol = Symbol.of_string "TSLA"
         ; remaining_size = Size.of_int 50
@@ -182,6 +186,7 @@ let%expect_test "format_event: all event types" =
     ; Order_reject
         { request =
             { symbol = Symbol.of_string "GOOG"
+            ; client_order_id = 11
             ; participant = Participant.of_string "Alice"
             ; side = Sell
             ; price = Price.of_int_cents 28000

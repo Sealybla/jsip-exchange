@@ -86,6 +86,7 @@ let dispatch_event t (event : Exchange_event.t) =
     push_to_session t request.participant event
   | Order_cancel
       { order_id = _
+      ; client_order_id = _
       ; participant
       ; symbol = _
       ; remaining_size = _
@@ -99,9 +100,11 @@ let dispatch_event t (event : Exchange_event.t) =
       ; size = _
       ; aggressor_order_id = _
       ; aggressor_participant
+      ; aggressor_client_order_id = _
       ; aggressor_side = _
       ; resting_order_id = _
       ; resting_participant
+      ; resting_client_order_id = _
       } ->
     push_to_session t aggressor_participant event;
     push_to_session t resting_participant event
@@ -143,18 +146,17 @@ let set_up_session_helper t (participant : Participant.t) : unit =
     ~data:(Session.create participant)
 ;;
 
-let set_up_session_err t (participant : Participant.t) : unit Or_error.t =
+let set_up_session_err t (participant : Participant.t) : Session.t Or_error.t
+  =
   let sess_if_exists = Hashtbl.find t.participant_sessions participant in
   match sess_if_exists with
   | Some _ ->
     Or_error.error_string
       [%string "conflict: participant already has session"]
   | None ->
-    Ok
-      (Hashtbl.add_exn
-         t.participant_sessions
-         ~key:participant
-         ~data:(Session.create participant))
+    let new_sess = Session.create participant in
+    Hashtbl.add_exn t.participant_sessions ~key:participant ~data:new_sess;
+    Ok new_sess
 ;;
 
 (* write clean up session helper without deferred, clean up session *)

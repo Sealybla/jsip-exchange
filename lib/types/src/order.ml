@@ -1,9 +1,14 @@
 open! Core
 
+module Client_order_id = struct
+  type t = int [@@deriving sexp, bin_io, compare, equal, hash]
+end
+
 module Request = struct
   type t =
     { symbol : Symbol.t
     ; participant : Participant.t
+    ; client_order_id : Client_order_id.t
     ; side : Side.t
     ; price : Price.t
     ; size : Size.t
@@ -11,19 +16,32 @@ module Request = struct
     }
   [@@deriving sexp, bin_io]
 
-  let to_string { symbol; participant; side; price; size; time_in_force } =
+  let to_string
+    { symbol
+    ; client_order_id
+    ; participant
+    ; side
+    ; price
+    ; size
+    ; time_in_force
+    }
+    =
     let price = Price.to_string_dollar price in
     let size = Size.to_int size in
     [%string
-      "%{side#Side} %{symbol#Symbol} %{size#Int}@%{price} \
-       %{time_in_force#Time_in_force} as %{participant#Participant}"]
+      "%{side#Side} %{client_order_id#Int} %{symbol#Symbol} \
+       %{size#Int}@%{price} %{time_in_force#Time_in_force} as \
+       %{participant#Participant}"]
   ;;
+
+  let client_order_id t = t.client_order_id
 end
 
 type t =
   { order_id : Order_id.t
   ; symbol : Symbol.t
   ; participant : Participant.t
+  ; client_order_id : Client_order_id.t
   ; side : Side.t
   ; price : Price.t
   ; size : Size.t
@@ -36,6 +54,7 @@ let to_string
   ({ order_id
    ; symbol = _
    ; participant
+   ; client_order_id = _
    ; side = _
    ; price
    ; size = _
@@ -59,6 +78,7 @@ let create (req : Request.t) ~order_id =
   { order_id
   ; symbol = req.symbol
   ; participant = req.participant
+  ; client_order_id = req.client_order_id
   ; side = req.side
   ; price = req.price
   ; size = req.size
@@ -75,6 +95,7 @@ let price t = t.price
 let size t = t.size
 let remaining_size t = t.remaining_size
 let time_in_force t = t.time_in_force
+let client_order_id t = t.client_order_id
 
 let fill t ~by =
   if Size.( <= ) by Size.zero
