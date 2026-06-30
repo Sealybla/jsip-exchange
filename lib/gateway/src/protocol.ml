@@ -16,7 +16,10 @@ let parse_command line =
     in
     match parts with
     | [] -> Error "empty command"
-    | _ :: [] -> Error "no client order id or anything else"
+    | _ :: [] ->
+      Error
+        "expected: BUY|SELL <client_id> <symbol> <size> <price> [DAY|IOC] \
+         [as <name>]"
     | side_str :: client_order_id_str :: rest ->
       let open Result.Let_syntax in
       let%bind side =
@@ -28,7 +31,7 @@ let parse_command line =
       in
       let%bind client_order_id =
         match Int.of_string_opt client_order_id_str with
-        | Some int_of_cloid -> Ok int_of_cloid
+        | Some int_of_cloid -> Ok (Client_order_id.of_int int_of_cloid)
         | None -> Error [%string "client order id is not an int"]
       in
       (match rest with
@@ -88,7 +91,7 @@ let parse_command line =
             : Order.Request.t)
        | _ ->
          Error
-           "expected: BUY|SELL> <client_order_id> <symbol> <size> <price> \
+           "expected: BUY|SELL <client_id> <symbol> <size> <price> \
             [DAY|IOC] [as <name>]"))
 ;;
 
@@ -104,9 +107,8 @@ let parse_command_with_default_participant line ~default =
 let format_event = function
   | Exchange_event.Order_accept { order_id; request } ->
     sprintf
-      "ACCEPTED id=%s %s %s %s %d@%s %s"
+      "ACCEPTED id=%s %s %s %d@%s %s"
       (Order_id.to_string order_id)
-      (Int.to_string request.client_order_id)
       (Symbol.to_string request.symbol)
       (Side.to_string request.side)
       (Size.to_int request.size)
@@ -115,17 +117,16 @@ let format_event = function
   | Fill fill -> [%string "FILL %{fill#Fill}"]
   | Order_cancel
       { order_id
-      ; client_order_id
+      ; client_order_id = _
       ; participant = _
       ; symbol
       ; remaining_size
       ; reason
       } ->
     sprintf
-      "CANCELLED id=%s %s %s remaining=%d reason=%s"
+      "CANCELLED id=%s %s remaining=%d reason=%s"
       (Order_id.to_string order_id)
       (Symbol.to_string symbol)
-      (Int.to_string client_order_id)
       (Size.to_int remaining_size)
       (Cancel_reason.to_string reason)
   | Order_reject { request; reason } ->

@@ -7,10 +7,6 @@
 
 open! Core
 
-module Client_order_id : sig
-  type t = int [@@deriving sexp, bin_io, compare, equal, hash]
-end
-
 (** An order as submitted by a participant (before the exchange assigns an
     order ID). This is what the gateway receives. *)
 module Request : sig
@@ -27,6 +23,7 @@ module Request : sig
 
   val to_string : t -> string
   val client_order_id : t -> Client_order_id.t
+  val participant : t -> Participant.t
 end
 
 (** A live order on the exchange, with an ID assigned by the matching engine
@@ -53,6 +50,7 @@ val price : t -> Price.t
 val size : t -> Size.t
 val remaining_size : t -> Size.t
 val time_in_force : t -> Time_in_force.t
+(* val valid_client_order_id : Participant.t -> Client_order_id.t -> bool *)
 
 (** {2 Mutation}
 

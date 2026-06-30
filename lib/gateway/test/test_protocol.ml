@@ -12,58 +12,58 @@ let print_parse line =
 (* --- Successful parsing --- *)
 
 let%expect_test "parse: basic buy" =
-  print_parse "BUY AAPL 100 150.25";
-  [%expect {| BUY AAPL 100@$150.25 DAY as anonymous |}]
+  print_parse "BUY 101 AAPL 100 150.25";
+  [%expect {| BUY 101 AAPL 100@$150.25 DAY as anonymous |}]
 ;;
 
 let%expect_test "parse: basic sell" =
-  print_parse "SELL TSLA 50 200.00";
-  [%expect {| SELL TSLA 50@$200.00 DAY as anonymous |}]
+  print_parse "SELL 101 TSLA 50 200.00";
+  [%expect {| SELL 101 TSLA 50@$200.00 DAY as anonymous |}]
 ;;
 
 let%expect_test "parse: case insensitive side" =
-  print_parse "buy AAPL 100 150.00";
-  print_parse "Buy AAPL 100 150.00";
+  print_parse "buy 101 AAPL 100 150.00";
+  print_parse "Buy 101 AAPL 100 150.00";
   [%expect
     {|
-    BUY AAPL 100@$150.00 DAY as anonymous
-    BUY AAPL 100@$150.00 DAY as anonymous
+    BUY 101 AAPL 100@$150.00 DAY as anonymous
+    BUY 101 AAPL 100@$150.00 DAY as anonymous
     |}]
 ;;
 
 let%expect_test "parse: with IOC time-in-force" =
-  print_parse "BUY AAPL 100 150.00 IOC";
-  [%expect {| BUY AAPL 100@$150.00 IOC as anonymous |}]
+  print_parse "BUY 101 AAPL 100 150.00 IOC";
+  [%expect {| BUY 101 AAPL 100@$150.00 IOC as anonymous |}]
 ;;
 
 let%expect_test "parse: with explicit DAY" =
-  print_parse "SELL AAPL 200 151.00 DAY";
-  [%expect {| SELL AAPL 200@$151.00 DAY as anonymous |}]
+  print_parse "SELL 101 AAPL 200 151.00 DAY";
+  [%expect {| SELL 101 AAPL 200@$151.00 DAY as anonymous |}]
 ;;
 
 let%expect_test "parse: with participant" =
-  print_parse "BUY AAPL 100 150.00 as Alice";
-  [%expect {| BUY AAPL 100@$150.00 DAY as Alice |}]
+  print_parse "BUY 101 AAPL 100 150.00 as Alice";
+  [%expect {| BUY 101 AAPL 100@$150.00 DAY as Alice |}]
 ;;
 
 let%expect_test "parse: with TIF and participant" =
-  print_parse "SELL GOOG 75 2800.50 IOC as Bob";
-  [%expect {| SELL GOOG 75@$2800.50 IOC as Bob |}]
+  print_parse "SELL 101 GOOG 75 2800.50 IOC as Bob";
+  [%expect {| SELL 101 GOOG 75@$2800.50 IOC as Bob |}]
 ;;
 
 let%expect_test "parse: symbol is uppercased" =
-  print_parse "BUY aapl 100 150.00";
-  [%expect {| BUY aapl 100@$150.00 DAY as anonymous |}]
+  print_parse "BUY 101 aapl 100 150.00";
+  [%expect {| BUY 101 aapl 100@$150.00 DAY as anonymous |}]
 ;;
 
 let%expect_test "parse: extra whitespace is ignored" =
-  print_parse "  BUY   AAPL   100   150.00  ";
-  [%expect {| BUY AAPL 100@$150.00 DAY as anonymous |}]
+  print_parse "  BUY 101   AAPL   100   150.00  ";
+  [%expect {| BUY 101 AAPL 100@$150.00 DAY as anonymous |}]
 ;;
 
 let%expect_test "parse: price with dollar sign" =
-  print_parse "BUY AAPL 100 $150.25";
-  [%expect {| BUY AAPL 100@$150.25 DAY as anonymous |}]
+  print_parse "BUY 101 AAPL 100 $150.25";
+  [%expect {| BUY 101 AAPL 100@$150.25 DAY as anonymous |}]
 ;;
 
 (* --- Parse errors --- *)
@@ -87,15 +87,15 @@ let%expect_test "parse error: missing fields" =
   print_parse "BUY";
   [%expect
     {|
-    ERROR: expected: BUY|SELL <symbol> <size> <price> [DAY|IOC] [as <name>]
-    ERROR: expected: BUY|SELL <symbol> <size> <price> [DAY|IOC] [as <name>]
+    ERROR: client order id is not an int
+    ERROR: expected: BUY|SELL <client_id> <symbol> <size> <price> [DAY|IOC] [as <name>]
     |}]
 ;;
 
 let%expect_test "parse error: invalid size" =
-  print_parse "BUY AAPL abc 150.00";
-  print_parse "BUY AAPL 0 150.00";
-  print_parse "BUY AAPL -5 150.00";
+  print_parse "BUY 01 AAPL abc 150.00";
+  print_parse "BUY 01 AAPL 0 150.00";
+  print_parse "BUY 01 AAPL -5 150.00";
   [%expect
     {|
     ERROR: invalid size: abc
@@ -105,7 +105,7 @@ let%expect_test "parse error: invalid size" =
 ;;
 
 let%expect_test "parse error: invalid price" =
-  print_parse "BUY AAPL 100 xyz";
+  print_parse "BUY 01 AAPL 100 xyz";
   [%expect
     {|
     ERROR: invalid price: xyz
@@ -114,7 +114,7 @@ let%expect_test "parse error: invalid price" =
 ;;
 
 let%expect_test "parse error: unknown time-in-force" =
-  print_parse "BUY AAPL 100 150.00 QQQ";
+  print_parse "BUY 11 AAPL 100 150.00 QQQ";
   [%expect {| ERROR: unknown time-in-force: QQQ (expected DAY or IOC) |}]
 ;;
 
@@ -124,7 +124,7 @@ let%expect_test "default participant: used when none specified" =
   let default = Participant.of_string "DefaultTrader" in
   let req =
     Protocol.parse_command_with_default_participant
-      "BUY AAPL 100 150.00"
+      "BUY 11 AAPL 100 150.00"
       ~default
     |> Result.map_error ~f:Error.of_string
     |> ok_exn
@@ -137,7 +137,7 @@ let%expect_test "default participant: overridden by explicit 'as'" =
   let default = Participant.of_string "DefaultTrader" in
   let req =
     Protocol.parse_command_with_default_participant
-      "BUY AAPL 100 150.00 as Alice"
+      "BUY 11 AAPL 100 150.00 as Alice"
       ~default
     |> Result.map_error ~f:Error.of_string
     |> ok_exn
@@ -154,7 +154,7 @@ let%expect_test "format_event: all event types" =
         { order_id = Order_id.of_string "1"
         ; request =
             { symbol = Symbol.of_string "AAPL"
-            ; client_order_id = 11
+            ; client_order_id = Client_order_id.of_int 11
             ; participant = Participant.of_string "Alice"
             ; side = Buy
             ; price = Price.of_int_cents 15000
@@ -169,15 +169,15 @@ let%expect_test "format_event: all event types" =
         ; size = Size.of_int 100
         ; aggressor_order_id = Order_id.of_string "2"
         ; aggressor_participant = Participant.of_string "Alice"
-        ; aggressor_client_order_id = 11
+        ; aggressor_client_order_id = Client_order_id.of_int 11
         ; aggressor_side = Buy
         ; resting_order_id = Order_id.of_string "1"
         ; resting_participant = Participant.of_string "Bob"
-        ; resting_client_order_id = 22
+        ; resting_client_order_id = Client_order_id.of_int 22
         }
     ; Order_cancel
         { order_id = Order_id.of_string "3"
-        ; client_order_id = 33
+        ; client_order_id = Client_order_id.of_int 33
         ; participant = Participant.of_string "Charlie"
         ; symbol = Symbol.of_string "TSLA"
         ; remaining_size = Size.of_int 50
@@ -186,7 +186,7 @@ let%expect_test "format_event: all event types" =
     ; Order_reject
         { request =
             { symbol = Symbol.of_string "GOOG"
-            ; client_order_id = 11
+            ; client_order_id = Client_order_id.of_int 11
             ; participant = Participant.of_string "Alice"
             ; side = Sell
             ; price = Price.of_int_cents 28000
@@ -243,7 +243,7 @@ let%expect_test "round-trip: parse a command, submit, format result" =
     (Harness.sell ~price_cents:15000 ~participant:Harness.bob ());
   (* Parse a buy command from text and submit it *)
   let request =
-    Protocol.parse_command "BUY AAPL 100 150.00 as Alice"
+    Protocol.parse_command "BUY 11 AAPL 100 150.00 as Alice"
     |> Result.map_error ~f:Error.of_string
     |> ok_exn
   in

@@ -9,7 +9,7 @@ let make_order
   ~order_id
   ?(size = 100)
   ?(participant = Harness.alice)
-  ?(client_order_id = 11)
+  ?(client_order_id = Client_order_id.of_int 11)
   ()
   =
   Order.create

@@ -115,7 +115,9 @@ let parse
               (Submit
                  { symbol
                  ; participant
-                 ; client_order_id = 0 (* NOT TRUE WILL CHANGE LATER *)
+                 ; client_order_id =
+                     Client_order_id.of_int
+                       0 (* NOT TRUE WILL CHANGE LATER *)
                  ; side =
                      (match side_first with
                       | Buy -> Side.Buy

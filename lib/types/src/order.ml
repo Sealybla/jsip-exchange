@@ -1,9 +1,5 @@
 open! Core
 
-module Client_order_id = struct
-  type t = int [@@deriving sexp, bin_io, compare, equal, hash]
-end
-
 module Request = struct
   type t =
     { symbol : Symbol.t
@@ -29,12 +25,13 @@ module Request = struct
     let price = Price.to_string_dollar price in
     let size = Size.to_int size in
     [%string
-      "%{side#Side} %{client_order_id#Int} %{symbol#Symbol} \
+      "%{side#Side} %{client_order_id#Client_order_id} %{symbol#Symbol} \
        %{size#Int}@%{price} %{time_in_force#Time_in_force} as \
        %{participant#Participant}"]
   ;;
 
   let client_order_id t = t.client_order_id
+  let participant t = t.participant
 end
 
 type t =

@@ -14,6 +14,15 @@ type t [@@deriving sexp_of]
     order book. *)
 val create : Symbol.t list -> t
 
+(* checks if participant is in table, if not add participant and client order
+   id, if is in table, then check its client order ids for client_order_id.
+   If exist, then return false, if not, then add and return true *)
+val check_add_participant_id
+  :  t
+  -> Participant.t
+  -> Client_order_id.t
+  -> bool
+
 (** {2 Order submission} *)
 
 (** Submit a new order request. Returns the list of exchange events produced:
