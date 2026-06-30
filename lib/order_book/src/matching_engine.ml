@@ -23,24 +23,15 @@ let create symbols =
 ;;
 
 let check_add_participant_id t participant client_order_id order : bool =
-  let is_participant = Hashtbl.find t.participant_id_table participant in
-  match is_participant with
+  match Hashtbl.find t.participant_id_table participant with
   | Some order_ids ->
-    let partic_has_id = Hashtbl.find order_ids client_order_id in
-    (match partic_has_id with
-     | Some _ -> false
-     | None ->
-       let _ = Hashtbl.add order_ids ~key:client_order_id ~data:order in
-       true)
+    (match Hashtbl.add order_ids ~key:client_order_id ~data:order with
+     | `Duplicate -> false
+     | `Ok -> true)
   | None ->
     let new_order_table = Client_order_id.Table.create () in
-    let _ = Hashtbl.add new_order_table ~key:client_order_id ~data:order in
-    let _ =
-      Hashtbl.add
-        t.participant_id_table
-        ~key:participant
-        ~data:new_order_table
-    in
+    Hashtbl.set new_order_table ~key:client_order_id ~data:order;
+    Hashtbl.set t.participant_id_table ~key:participant ~data:new_order_table;
     true
 ;;
 
@@ -101,10 +92,11 @@ let submit t (request : Order.Request.t) =
     let order = Order.create request ~order_id in
     let client_order_id = Order.Request.client_order_id request in
     let participant = Order.Request.participant request in
-    let valid_new_id =
-      check_add_participant_id t participant client_order_id order
-    in
-    (match valid_new_id with
+    (match check_add_participant_id t participant client_order_id order with
+     | false ->
+       [ Exchange_event.Order_reject
+           { request; reason = "invalid client order id" }
+       ]
      | true ->
        let accepted = Exchange_event.Order_accept { order_id; request } in
        (* Snapshot BBO before matching so we can detect changes. *)
@@ -144,9 +136,41 @@ let submit t (request : Order.Request.t) =
                { symbol = Order.symbol order; bbo = bbo_after }
            ]
        in
-       List.concat [ [ accepted ]; fill_events; post_events; bbo_events ]
-     | false ->
-       [ Exchange_event.Order_reject
-           { request; reason = "invalid client order id" }
+       List.concat [ [ accepted ]; fill_events; post_events; bbo_events ])
+;;
+
+let cancel_order t ~participant ~client_order_id =
+  (* find order by participant and client order id *)
+  (* assumes participant must exist *)
+  let client_orders = Hashtbl.find t.participant_id_table participant in
+  match client_orders with
+  | None ->
+    (* cancel_reject event *)
+    [ Exchange_event.Cancel_reject
+        { participant
+        ; client_order_id
+        ; reason = "client order id does not exist"
+        }
+    ]
+  | Some client_order_ids ->
+    let order = Hashtbl.find client_order_ids client_order_id in
+    (match order with
+     | None ->
+       (* cancel_reject event *)
+       [ Exchange_event.Cancel_reject
+           { participant
+           ; client_order_id
+           ; reason = "client order id does not exist"
+           }
+       ]
+     | Some ord ->
+       [ Exchange_event.Order_cancel
+           { order_id = Order.order_id ord
+           ; client_order_id
+           ; participant
+           ; symbol = Order.symbol ord
+           ; remaining_size = Order.remaining_size ord
+           ; reason = Participant_requested
+           }
        ])
 ;;
