@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dun build:*)",
+      "Bash(dune runtest:*\\), Bash\\(dune fmt:*\\), Bash\\(git status:*\\), Bash\\(git diff:*\\), Bash\\(git log:*)"
+    ]
+  }
+}
