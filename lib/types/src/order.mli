@@ -62,3 +62,6 @@ val fill : t -> by:Size.t -> unit
 
 (** Is this order fully filled? (remaining_size = 0) *)
 val is_fully_filled : t -> bool
+
+(* turns order remaining size to 0 *)
+val fully_fill : t -> unit

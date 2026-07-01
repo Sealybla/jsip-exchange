@@ -21,6 +21,7 @@ val check_add_participant_id
   :  t
   -> Participant.t
   -> Client_order_id.t
+  -> Order.t
   -> bool
 
 (** {2 Order submission} *)
@@ -39,6 +40,7 @@ val submit : t -> Order.Request.t -> Exchange_event.t list
     on this engine. *)
 val book : t -> Symbol.t -> Order_book.t option
 
+(* Cancels by finding order by participant and client order ID *)
 val cancel_order
   :  t
   -> Participant.t

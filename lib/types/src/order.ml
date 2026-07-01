@@ -110,3 +110,4 @@ let fill t ~by =
 ;;
 
 let is_fully_filled t = Size.equal t.remaining_size Size.zero
+let fully_fill t = fill t ~by:t.remaining_size

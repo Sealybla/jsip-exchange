@@ -58,3 +58,12 @@ let session_feed_rpc =
     ~bin_error:Error.bin_t
     ()
 ;;
+
+let cancel_order_rpc =
+  Rpc.Rpc.create
+    ~name:"cancel-order"
+    ~version:1
+    ~bin_query:Client_order_id.bin_t
+    ~bin_response:[%bin_type_class: unit Or_error.t]
+    ~include_in_error_count:Only_on_exn
+;;

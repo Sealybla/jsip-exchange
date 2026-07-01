@@ -144,6 +144,8 @@ let format_event = function
   | Trade_report { symbol; price; size } ->
     let size = Size.to_int size in
     [%string "TRADE %{symbol#Symbol} %{price#Price} x%{size#Int}"]
+  | Cancel_reject { participant = _; client_order_id = _; reason } ->
+    sprintf "CANCEL REJECT reason=%s" reason
 ;;
 
 let format_events events =

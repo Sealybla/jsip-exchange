@@ -139,24 +139,20 @@ let submit t (request : Order.Request.t) =
        List.concat [ [ accepted ]; fill_events; post_events; bbo_events ])
 ;;
 
-let cancel_order t ~participant ~client_order_id =
+let cancel_order t participant client_order_id =
   (* find order by participant and client order id *)
   (* assumes participant must exist *)
-  let client_orders = Hashtbl.find t.participant_id_table participant in
-  match client_orders with
+  match Hashtbl.find t.participant_id_table participant with
   | None ->
-    (* cancel_reject event *)
     [ Exchange_event.Cancel_reject
         { participant
         ; client_order_id
-        ; reason = "client order id does not exist"
+        ; reason = "Participant does not exist"
         }
     ]
   | Some client_order_ids ->
-    let order = Hashtbl.find client_order_ids client_order_id in
-    (match order with
+    (match Hashtbl.find client_order_ids client_order_id with
      | None ->
-       (* cancel_reject event *)
        [ Exchange_event.Cancel_reject
            { participant
            ; client_order_id
@@ -164,13 +160,46 @@ let cancel_order t ~participant ~client_order_id =
            }
        ]
      | Some ord ->
-       [ Exchange_event.Order_cancel
-           { order_id = Order.order_id ord
-           ; client_order_id
-           ; participant
-           ; symbol = Order.symbol ord
-           ; remaining_size = Order.remaining_size ord
-           ; reason = Participant_requested
-           }
-       ])
+       (* remove order from order book *)
+       (match Map.find t.books (Order.symbol ord) with
+        | None ->
+          [ Exchange_event.Cancel_reject
+              { participant
+              ; client_order_id
+              ; reason = "For some reason order is not in order book"
+              }
+          ]
+        | Some order_book ->
+          (* check if order ord has remaining size 0, if 0 then cancel *)
+          (match Order.is_fully_filled ord with
+           | true ->
+             [ Exchange_event.Cancel_reject
+                 { participant
+                 ; client_order_id
+                 ; reason = "For some reason order is not in order book"
+                 }
+             ]
+           | false ->
+             let bbo_before = Order_book.best_bid_offer order_book in
+             let _ = Order_book.remove order_book (Order.order_id ord) in
+             let bbo_after = Order_book.best_bid_offer order_book in
+             let _ =
+               if Bbo.equal bbo_before bbo_after
+               then []
+               else
+                 [ Exchange_event.Best_bid_offer_update
+                     { symbol = Order.symbol ord; bbo = bbo_after }
+                 ]
+             in
+             (* set canceled order size to 0 so we know it is not accessible *)
+             Order.fully_fill ord;
+             [ Exchange_event.Order_cancel
+                 { order_id = Order.order_id ord
+                 ; client_order_id
+                 ; participant
+                 ; symbol = Order.symbol ord
+                 ; remaining_size = Order.remaining_size ord
+                 ; reason = Participant_requested
+                 }
+             ])))
 ;;

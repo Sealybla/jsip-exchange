@@ -138,11 +138,6 @@ let best_price t side =
             Price.equal (Order.price order) target_price)))
 ;;
 
-(* | first :: rest -> let is_better = match (side : Side.t) with Buy ->
-   Price.( > ) | Sell -> Price.( < ) in Some (List.fold rest
-   ~init:(Order.price first) ~f:(fun best order -> let price = Order.price
-   order in if is_better price best then price else best)) (List.reduce rest) *)
-
 let best_level t side : Level.t option =
   match best_price t side with
   | None -> None

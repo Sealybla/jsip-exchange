@@ -103,6 +103,9 @@ let start ~symbols ~port () =
             Rpc_protocol.submit_order_rpc
             (fun state request ->
                handle_submit ~request_writer request state)
+        ; Rpc.Rpc.implement
+            Rpc_protocol.cancel_order_rpc
+            (fun state clint_order -> let reader = )
         ; Rpc.Rpc.implement' Rpc_protocol.book_query_rpc (fun state symbol ->
             ignore state;
             Matching_engine.book engine symbol
@@ -124,6 +127,7 @@ let start ~symbols ~port () =
             (fun state () ->
                let reader = handle_session_feed state in
                return reader)
+        
         ]
       ~on_unknown_rpc:`Close_connection
       ~on_exception:Log_on_background_exn
